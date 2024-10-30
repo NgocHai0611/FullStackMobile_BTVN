@@ -1,83 +1,276 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   Image,
   Pressable,
-  ScrollView,
+  FlatList,
+  Modal,
+  TextInput,
 } from "react-native";
-import { Table, Row } from "react-native-table-component";
+import { launchImageLibrary } from "react-native-image-picker";
+import axios from "axios";
 
 export default function DashBoardAdmin() {
-  // Tiêu đề của bảng
-  const tableHead = ["Name", "Password", "Avatar", "Actions"];
+  const [users, setUsers] = useState([]);
 
-  // Dữ liệu mẫu cho bảng
-  const tableData = [
-    { name: "user1", pass: "pass1", avatar: "https://via.placeholder.com/30" },
-    { name: "user2", pass: "pass2", avatar: "https://via.placeholder.com/30" },
-    { name: "user3", pass: "pass3", avatar: "https://via.placeholder.com/30" },
-    { name: "user4", pass: "pass4", avatar: "https://via.placeholder.com/30" },
-    { name: "user5", pass: "pass5", avatar: "https://via.placeholder.com/30" },
-    { name: "user6", pass: "pass6", avatar: "https://via.placeholder.com/30" },
-    { name: "user7", pass: "pass7", avatar: "https://via.placeholder.com/30" },
-  ];
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState("");
 
-  // Hàm xử lý khi nhấn nút "Sửa"
-  const handleEdit = (name) => {
-    alert(`Edit user: ${name}`);
+  // User data
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [avatar, setAvatar] = useState("");
+
+  const [resultChange, setResultChange] = useState(400);
+
+  // Call API once when component mounts
+  useEffect(() => {
+    axios
+      .get("http://localhost:3000/listUser")
+      .then((response) => {
+        setUsers(response.data[0]); // Ensure this is an array of users
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [resultChange]);
+
+  const openImagePicker = () => {
+    launchImageLibrary({ mediaType: "photo" }, (response) => {
+      if (response.assets && response.assets.length > 0) {
+        const imageUri = response.assets[0].uri;
+        setAvatar(imageUri);
+      }
+    });
   };
 
-  // Hàm xử lý khi nhấn nút "Xóa"
-  const handleDelete = (name) => {
-    alert(`Deleted user: ${name}`);
+  const handleSave = () => {
+    const newUser = {
+      username: username,
+      password: password,
+      avatar:
+        avatar ||
+        "https://res.cloudinary.com/dkmwjkajj/image/upload/v1721703004/samples/tn5hdifprhwrjnevwsi9.jpg",
+    };
+
+    axios
+      .post("http://localhost:3000/addUser", newUser)
+      .then((respone) => {
+        setResultChange(respone.status);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+
+    resetModal();
   };
+
+  const handleEdit = () => {
+    if (selectedUser) {
+      const updatedUser = {
+        username: username,
+        password: password,
+        avatar: avatar || selectedUser.avatar, // Giữ nguyên avatar nếu không có mới
+      };
+
+      resetModal();
+
+      // Gọi API để cập nhật người dùng
+      axios
+        .put(`http://localhost:3000/updateUser/${selectedUser.Id}`, updatedUser) // Sử dụng ID để cập nhật
+        .then((respone) => {
+          // Cập nhật danh sách người dùng sau khi cập nhật thành công
+          setResultChange(respone.status);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  };
+
+  const openEditModal = (user) => {
+    setUsername(user.name);
+    setPassword(user.pass);
+    setAvatar(user.avatar);
+    setSelectedUser(user);
+    setModalType("edit");
+    setModalVisible(true);
+  };
+
+  const openDeleteModal = (user) => {
+    setSelectedUser(user);
+    setModalType("delete");
+    setModalVisible(true);
+  };
+
+  const confirmDelete = () => {
+    setUsers((prevData) =>
+      prevData.filter((item) => item.name !== selectedUser.name)
+    );
+    resetModal();
+
+    if (selectedUser) {
+      // Gọi API để xóa người dùng
+      axios
+        .delete(`http://localhost:3000/deleteUser/${selectedUser.Id}`) // Sử dụng ID để xóa
+        .then((respone) => {
+          setResultChange(respone.status);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  };
+
+  const resetModal = () => {
+    setUsername("");
+    setPassword("");
+    setSelectedUser(null);
+    setAvatar("");
+    setModalVisible(false);
+  };
+
+  const openAddUserModal = () => {
+    resetModal();
+    setModalType("add");
+    setModalVisible(true);
+  };
+
+  // Render item for FlatList
+  const renderItem = ({ item }) => (
+    <View style={styles.row} key={item.Id}>
+      <Text style={styles.cell}>{item.name}</Text>
+      <Text style={styles.cell}>{item.pass}</Text>
+      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      <View style={styles.actions}>
+        <Pressable
+          onPress={() => openEditModal(item)}
+          style={styles.buttonUpdate}
+        >
+          <Text style={styles.buttonText}>Edit</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => openDeleteModal(item)}
+          style={styles.buttonDelete}
+        >
+          <Text style={styles.buttonText}>Delete</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <Text style={{ fontWeight: "bold", fontSize: 25 }}>Danh Sách User</Text>
-      <ScrollView horizontal={true}>
-        <ScrollView style={styles.tableContainer}>
-          <Table borderStyle={{ borderWidth: 1, borderColor: "#c8e1ff" }}>
-            <Row data={tableHead} style={styles.head} textStyle={styles.text} />
 
-            {/* Hiển thị dữ liệu */}
-            {tableData.map((rowData, index) => (
-              <Row
-                key={index}
-                data={[
-                  rowData.name,
-                  rowData.pass,
-                  <Image
-                    source={{ uri: rowData.avatar }}
-                    style={styles.avatar}
-                  />,
-                  <View style={styles.actions}>
-                    <Pressable
-                      onPress={() => handleEdit(rowData.name)}
-                      style={styles.buttonUpdate}
-                    >
-                      <Text style={styles.buttonText}>Edit</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => handleDelete(rowData.name)}
-                      style={styles.buttonDelte}
-                    >
-                      <Text style={styles.buttonText}>Delete</Text>
-                    </Pressable>
-                  </View>,
-                ]}
-                textStyle={styles.text}
-              />
-            ))}
-          </Table>
-        </ScrollView>
-      </ScrollView>
+      <FlatList
+        data={users}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.Id} // Hoặc sử dụng item.id nếu có
+      />
 
-      <Pressable style={styles.btnAddUser}>
+      <Pressable style={styles.btnAddUser} onPress={openAddUserModal}>
         <Text style={{ color: "white" }}>Add New User</Text>
       </Pressable>
+
+      {/* Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={resetModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {modalType === "delete" ? (
+              <>
+                <Text>Bạn có muốn xóa nhân viên này không?</Text>
+                <View style={styles.modalActions}>
+                  <Pressable onPress={resetModal} style={styles.cancelButton}>
+                    <Text style={styles.buttonText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={confirmDelete}
+                    style={styles.deleteButton}
+                  >
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : modalType === "edit" ? (
+              <>
+                <Text style={styles.modalTitle}>Edit User</Text>
+
+                {/* Avatar Preview and Picker */}
+                {avatar ? (
+                  <Image
+                    source={{ uri: avatar }}
+                    style={styles.previewAvatar}
+                  />
+                ) : null}
+                <Pressable style={styles.imagePicker} onPress={openImagePicker}>
+                  <Text>Pick an Avatar</Text>
+                </Pressable>
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Username"
+                  value={username}
+                  onChangeText={setUsername}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  value={password}
+                  secureTextEntry={true}
+                  onChangeText={setPassword}
+                />
+
+                <Pressable onPress={handleEdit} style={styles.saveButton}>
+                  <Text style={styles.buttonText}>Update</Text>
+                </Pressable>
+              </>
+            ) : modalType === "add" ? (
+              <>
+                <Text style={styles.modalTitle}>Add New User</Text>
+
+                {/* Avatar Picker for new user */}
+                {avatar ? (
+                  <Image
+                    source={{ uri: avatar }}
+                    style={styles.previewAvatar}
+                  />
+                ) : null}
+                <Pressable style={styles.imagePicker} onPress={openImagePicker}>
+                  <Text>Pick an Avatar</Text>
+                </Pressable>
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Username"
+                  value={username}
+                  onChangeText={setUsername}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  value={password}
+                  secureTextEntry={true}
+                  onChangeText={setPassword}
+                />
+
+                <Pressable onPress={handleSave} style={styles.saveButton}>
+                  <Text style={styles.buttonText}>Add User</Text>
+                </Pressable>
+              </>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -88,21 +281,24 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#fff",
   },
-  head: {
-    width: 350, // Giới hạn chiều rộng của header là 300px
-    height: 40,
-    backgroundColor: "#f1f8ff",
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
   },
-  text: {
-    margin: 6,
+  cell: {
+    flex: 1,
     textAlign: "center",
   },
   avatar: {
-    width: 70,
-    height: 70,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   actions: {
-    width: "100%",
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
@@ -112,7 +308,7 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
   },
-  buttonDelte: {
+  buttonDelete: {
     backgroundColor: "red",
     padding: 5,
     borderRadius: 5,
@@ -120,16 +316,68 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
   },
-  tableContainer: {
-    width: 350, // Giới hạn chiều rộng của bảng là 300px
-  },
   btnAddUser: {
     width: 100,
     height: 30,
     backgroundColor: "blue",
     borderRadius: 10,
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  input: {
+    height: 40,
+    borderColor: "gray",
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  imagePicker: {
+    backgroundColor: "#f1f8ff",
+    padding: 10,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  previewAvatar: {
+    width: 100,
+    height: 100,
+    marginVertical: 10,
+  },
+  saveButton: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 5,
+  },
+  cancelButton: {
+    backgroundColor: "gray",
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  deleteButton: {
+    backgroundColor: "red",
+    padding: 10,
+    borderRadius: 5,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
   },
 });

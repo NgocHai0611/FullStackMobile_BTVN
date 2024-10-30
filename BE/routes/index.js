@@ -50,11 +50,54 @@ router.post("/login", function (req, res, next) {
 });
 
 router.post("/addUser", function (req, res, next) {
-  console.log(req.body);
+  const { username, password, avatar } = req.body;
+
+  pool
+    .query("Insert into user (name , pass ,avatar) values (? , ? , ?)", [
+      username,
+      password,
+      avatar,
+    ])
+    .then((respone) => {
+      res.sendStatus(200);
+    })
+    .catch((error) => {
+      res.sendStatus(500);
+    });
 });
 
-router.delete("/deleteUser/:id", function (req, res, next) {});
+router.delete("/deleteUser/:id", function (req, res, next) {
+  const userId = req.params.id;
 
-router.put("/updateUser/:id", function (req, res, next) {});
+  pool
+    .query("DELETE FROM user WHERE id = ?", [userId])
+    .then((response) => {
+      res.status(200).json({ message: "User deleted successfully" });
+    })
+    .catch((error) => {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Error deleting user" });
+    });
+});
+
+router.put("/updateUser/:id", function (req, res, next) {
+  const userId = req.params.id;
+  const { username, password } = req.body; // Lấy dữ liệu từ body yêu cầu
+
+  pool
+    .query("UPDATE user SET name = ?, pass = ? WHERE id = ?", [
+      username,
+      password,
+      userId,
+    ])
+    .then((response) => {
+      // Người dùng đã được cập nhật thành công
+      res.status(200).json({ message: "User updated successfully" });
+    })
+    .catch((error) => {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Error updating user" });
+    });
+});
 
 module.exports = router;
