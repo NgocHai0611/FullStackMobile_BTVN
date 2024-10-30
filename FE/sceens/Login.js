@@ -12,24 +12,30 @@ export default function Login({ navigation }) {
   const handleLogin = () => {
     const data = { username: userName, password: pass };
 
-    if (userName == "admin" && pass == "adminpassword") {
+    if (userName === "admin" && pass === "adminpassword") {
       navigation.navigate("DashBoardAdmin");
     } else {
       axios
         .post("http://localhost:3000/login", data)
-        .then((respone) => {
-          if (respone.status == 200) {
+        .then((response) => {
+          if (response.status === 200) {
             toast.success("Đăng Nhập Thành Công");
             navigation.navigate("DashBoardUser", {
-              user: respone.data.user[0],
+              user: response.data.user[0],
             });
-            // Chưa xử lý thông báo thêm
-          } else if (respone.statusText == "Not Found") {
-            toast.error("Tài Khoản Và Mật Khẩu Không Hợp Lệ");
+          } else {
+            // Kiểm tra thông báo từ server
+            toast.error(
+              response.data === "Tai Khoan Khong Hop Le"
+                ? "Tài Khoản Và Mật Khẩu Không Hợp Lệ"
+                : "Đăng Nhập Thất Bại"
+            );
           }
         })
         .catch((err) => {
           console.log(err);
+          // Thông báo lỗi khi có lỗi trong quá trình gửi request
+          toast.error("Tài Khoản Và Mật Khẩu Không Hợp Lệ");
         });
     }
   };

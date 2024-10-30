@@ -6,6 +6,7 @@ import {
   Image,
   TextInput,
   FlatList,
+  Pressable,
 } from "react-native";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -73,6 +74,23 @@ export default function DashBoard({ navigation, route }) {
               source={require("../assets/img/ringicon.png")}
               style={[styles.imgSizeHeader, { borderRadius: "50%" }]}
             ></Image>
+
+            <Pressable
+              style={{
+                width: 60,
+                height: 30,
+                backgroundColor: "aqua",
+                borderRadius: 30,
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              onPress={() => {
+                navigation.navigate("Login");
+              }}
+            >
+              <Text>Log Out</Text>
+            </Pressable>
           </View>
         </View>
       </View>
