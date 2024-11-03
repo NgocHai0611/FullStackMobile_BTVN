@@ -39,7 +39,7 @@ MongoClient.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true 
     });
 
     router.post('/addUsersMongo', (req, res) => {
-      const { name, password } = req.body;
+      const { name, password , avatar } = req.body;
   
       // Basic validation
       if (!name || !password) {
@@ -82,7 +82,7 @@ router.delete('/users/:id', (req, res) => {
 // Update
 router.put('/users/:id', (req, res) => {
   const userId = req.params.id;
-  const { name, password } = req.body;
+  const { name, password , avatar } = req.body;
 
   // Basic validation
   if (!name && !password) {
