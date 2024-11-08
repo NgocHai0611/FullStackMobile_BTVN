@@ -32,7 +32,9 @@ export default function DashBoardAdmin() {
     axios
       .get("http://localhost:3000/listUser")
       .then((response) => {
-        setUsers(response.data[0]); // Ensure this is an array of users
+        // setUsers(response.data[0]); setDataApi cho MySQL
+        console.log(response.data);
+        setUsers(response.data);
       })
       .catch((err) => {
         console.log(err);
@@ -81,7 +83,10 @@ export default function DashBoardAdmin() {
 
       // Gọi API để cập nhật người dùng
       axios
-        .put(`http://localhost:3000/updateUser/${selectedUser.Id}`, updatedUser) // Sử dụng ID để cập nhật
+        .put(
+          `http://localhost:3000/updateUser/${selectedUser._id}`,
+          updatedUser
+        ) // Sử dụng ID để cập nhật
         .then((respone) => {
           // Cập nhật danh sách người dùng sau khi cập nhật thành công
           setResultChange(respone.status);
@@ -115,8 +120,9 @@ export default function DashBoardAdmin() {
 
     if (selectedUser) {
       // Gọi API để xóa người dùng
+
       axios
-        .delete(`http://localhost:3000/deleteUser/${selectedUser.Id}`) // Sử dụng ID để xóa
+        .delete(`http://localhost:3000/deleteUser/${selectedUser._id}`) // Sử dụng ID để xóa
         .then((respone) => {
           setResultChange(respone.status);
         })

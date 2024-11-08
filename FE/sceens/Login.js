@@ -21,7 +21,8 @@ export default function Login({ navigation }) {
           if (response.status === 200) {
             toast.success("Đăng Nhập Thành Công");
             navigation.navigate("DashBoardUser", {
-              user: response.data.user[0],
+              // user: response.data.user[0], my sql
+              user: response.data,
             });
           } else {
             // Kiểm tra thông báo từ server

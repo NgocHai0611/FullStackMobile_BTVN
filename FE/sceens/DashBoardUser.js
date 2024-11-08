@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 
 export default function DashBoard({ navigation, route }) {
   const { user } = route.params; // Lấy danh sách người dùng từ tham số route
+  console.log(user[0]);
   const [data, setData] = useState([]);
 
   const [location, setLocation] = useState([
@@ -60,13 +61,13 @@ export default function DashBoard({ navigation, route }) {
           >
             <View style={{ flexDirection: "row" }}>
               <Image
-                source={{ uri: user.avatar }}
+                source={{ uri: user[0].avatar }}
                 style={[styles.imgSizeHeader, { borderRadius: "50%" }]}
               ></Image>
 
               <View>
                 <Text style={{ color: "white" }}>Welcome</Text>
-                <Text style={{ color: "white" }}>{user.name}</Text>
+                <Text style={{ color: "white" }}>{user[0].name}</Text>
               </View>
             </View>
 
@@ -187,7 +188,7 @@ export default function DashBoard({ navigation, route }) {
 
           <View>
             <Image
-              source={{ uri: user.avatar }}
+              source={{ uri: user[0].avatar }}
               style={styles.imgFooter}
             ></Image>
             <Text>Profile</Text>
