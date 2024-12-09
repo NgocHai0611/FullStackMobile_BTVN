@@ -143,4 +143,27 @@ router.put("/updateUser/:id", function (req, res, next) {
     });
 });
 
+router.post("/findUser/:id", function (req, res, next) {
+  const id = req.params.id; // Lấy ID từ params
+
+  // Kiểm tra nếu MongoDB chưa kết nối
+  if (!db) {
+    return res.status(500).send("MongoDB connection is not established");
+  }
+
+  // Tìm kiếm user trong MongoDB
+  db.collection("users")
+    .findOne({ _id: new ObjectId(id) }) // Chuyển ID sang ObjectId
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.status(200).json({ message: "User found", user });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send("Server Error");
+    });
+});
+
 module.exports = router;

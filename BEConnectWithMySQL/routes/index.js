@@ -100,4 +100,23 @@ router.put("/updateUser/:id", function (req, res, next) {
     });
 });
 
+router.post("/user/:id", function (req, res, next) {
+  const id = req.params.id; // Lấy id từ URL params
+
+  pool
+    .query("SELECT * FROM user WHERE id = ?", [id]) // Thực hiện truy vấn
+    .then((data) => {
+      // rows chứa kết quả của truy vấn
+      if (data.length > 0) {
+        res.status(200).json({ user: data[0] }); // Trả về user đầu tiên
+      } else {
+        res.status(404).json({ message: "Tài khoản không hợp lệ" });
+      }
+    })
+    .catch((error) => {
+      console.error("Database error:", error);
+      res.status(500).json({ message: "Server error" });
+    });
+});
+
 module.exports = router;
